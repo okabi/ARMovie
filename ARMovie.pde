@@ -13,11 +13,11 @@ Capture cam;
 // AR Marker detector
 MultiMarker nya;
 
-// AR Marker ID
-int markerID;
+// AR Marker IDs
+int[] markerIDs;
 
-// Video
-Movie mov;
+// Videos
+Movie[] movies;
 
 
 // Initialization
@@ -29,13 +29,18 @@ void setup() {
   // Initialization
   cam = new Capture(this, width, height);
   nya = new MultiMarker(this, width, height, "./data/camera_para.dat", NyAR4PsgConfig.CONFIG_PSG);
-
-  // Add AR markers to detector
-  markerID = nya.addARMarker("./data/patt.hiro", 80);
+  markerIDs = new int[2];
+  movies = new Movie[markerIDs.length];
   
-  // Load Movie
-  mov = new Movie(this, "video.mp4");
-  mov.loop();
+  // Add AR markers to detector
+  markerIDs[0] = nya.addARMarker("./data/patt.hiro", 80);
+  markerIDs[1] = nya.addARMarker("./data/patt.kanji", 80);
+  
+  // Load Movies
+  for(int i = 0; i < markerIDs.length; i++) {
+    movies[i] = new Movie(this, "video" + (i + 1) + ".mp4");
+    movies[i].loop();
+  }
   
   // Start Camera
   cam.start();
@@ -56,16 +61,18 @@ void draw() {
   nya.drawBackground(cam);
 
   // Draw movie on AR marker
-  if(!nya.isExist(markerID)) {
-    return;
+  for(int i = 0; i < markerIDs.length; i++) {
+    if(!nya.isExist(markerIDs[i])) {
+      return;
+    }
+    PVector[] v = nya.getMarkerVertex2D(markerIDs[i]);
+    movies[i].read();
+    beginShape();
+    texture(movies[i]);
+    vertex(v[0].x, v[0].y, 0, 0);
+    vertex(v[1].x, v[1].y, movies[i].width, 0);
+    vertex(v[2].x, v[2].y, movies[i].width, movies[i].height);
+    vertex(v[3].x, v[3].y, 0, movies[i].height);
+    endShape();
   }
-  PVector[] v = nya.getMarkerVertex2D(markerID);
-  mov.read();
-  beginShape();
-  texture(mov);
-  vertex(v[0].x, v[0].y, 0, 0);
-  vertex(v[1].x, v[1].y, mov.width, 0);
-  vertex(v[2].x, v[2].y, mov.width, mov.height);
-  vertex(v[3].x, v[3].y, 0, mov.height);
-  endShape();
 }
